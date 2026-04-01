@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # Forward /api requests to the backend Node.js server
+  # Note: This requires mod_proxy and mod_proxy_http to be enabled
+  # ProxyPass /api http://localhost:5000/api
+  # ProxyPassReverse /api http://localhost:5000/api
+
+  # SPA Routing: Send all other requests to index.html
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>

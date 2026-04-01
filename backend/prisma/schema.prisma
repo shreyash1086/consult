@@ -1,0 +1,150 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(uuid())
+  email       String       @unique
+  password    String
+  name        String
+  role        Role
+  createdAt   DateTime     @default(now())
+  submissions Submission[]
+}
+
+model Scenario {
+  id                      String       @id @default(uuid())
+  title                   String
+  description             String
+  industry                String
+  difficulty              Difficulty
+  modelAnswer             String
+  isPublished             Boolean      @default(false)
+  createdAt               DateTime     @default(now())
+  companyName             String       @default("AX Corp")
+  companyTagline          String?
+  revenue                 Float
+  grossClientMargin       Float
+  revenueGrowthYoY        Float
+  marginTrend             Float
+  totalHeadcount          Int
+  partners                Int
+  clientProfessionals     Int
+  employeeTurnover        Float
+  employeeEngagement      Float
+  numberOfClients         Int
+  numberOfEngagements     Int
+  engagementsPerClient    Float
+  avgEngagementSize       Float
+  avgDaysSalesOutstanding Int
+  clientRetention         Float
+  clientPerformanceIndex  Float
+  collaborationIndex      Float
+  deliveryQuality         Float
+  innovationIndex         Float
+  eminenceScore           Float
+  newCapabilitiesScore    Float
+  criticalIssues          String[]
+  competitionContext      String?
+  swotAnalysis            String?
+  strategyPlanContext     String?
+  cachedOptimalTrajectory Json?
+  questions               Question[]
+  submissions             Submission[]
+}
+
+model Question {
+  id            String       @id @default(uuid())
+  scenarioId    String
+  text          String
+  type          QuestionType
+  options       Json?
+  correctAnswer String
+  marks         Int          @default(10)
+  order         Int
+  scenario      Scenario     @relation(fields: [scenarioId], references: [id])
+}
+
+model Submission {
+  id               String           @id @default(uuid())
+  userId           String
+  scenarioId       String
+  consultationText String
+  questionAnswers  Json
+  timeTaken        Int              @default(0)
+  submittedAt      DateTime         @default(now())
+  status           SubmissionStatus @default(PENDING)
+  evaluation       Evaluation?
+  simulationRun    SimulationRun?
+  scenario         Scenario         @relation(fields: [scenarioId], references: [id])
+  user             User             @relation(fields: [userId], references: [id])
+}
+
+model SimulationRun {
+  id               String     @id @default(uuid())
+  submissionId     String     @unique
+  candidateKPIs    Json
+  optimalKPIs      Json
+  divergencePoints Json
+  outcomeScore     Float?
+  status           SimStatus  @default(PENDING)
+  createdAt        DateTime   @default(now())
+  submission       Submission @relation(fields: [submissionId], references: [id])
+}
+
+model Evaluation {
+  id                   String     @id @default(uuid())
+  submissionId         String     @unique
+  consultationScore    Float
+  semanticScore        Float
+  structureScore       Float
+  conceptScore         Float
+  consultationFeedback String
+  questionScore        Float
+  questionBreakdown    Json
+  totalScore           Float
+  grade                String
+  strengths            String[]
+  improvements         String[]
+  modelAnswerReveal    String
+  evaluatedAt          DateTime   @default(now())
+  submission           Submission @relation(fields: [submissionId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  TRAINER
+  CANDIDATE
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionType {
+  MCQ
+  SHORT_ANSWER
+  LONG_ANSWER
+}
+
+enum SubmissionStatus {
+  PENDING
+  SIMULATING
+  EVALUATED
+  FAILED
+}
+
+enum SimStatus {
+  PENDING
+  RUNNING
+  COMPLETE
+  FAILED
+}
