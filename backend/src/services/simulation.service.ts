@@ -46,6 +46,7 @@ export const runSimulation = async (submissionId: string) => {
     });
 
     if (!submission) throw new Error('Submission not found');
+    console.log(`[Simulation] Initializing for submission: ${submissionId}`);
     const { scenario } = submission;
 
     // Update status
@@ -53,6 +54,7 @@ export const runSimulation = async (submissionId: string) => {
       where: { id: submissionId },
       data: { status: SubmissionStatus.SIMULATING }
     });
+    console.log(`[Simulation] Status updated to SIMULATING`);
 
     await prisma.simulationRun.create({
       data: {
@@ -63,6 +65,7 @@ export const runSimulation = async (submissionId: string) => {
         divergencePoints: [],
       }
     });
+    console.log(`[Simulation] SimulationRun record created`);
 
     const initialState: CompanyState = {
       revenue: scenario.revenue,
@@ -82,14 +85,19 @@ export const runSimulation = async (submissionId: string) => {
     // Looking back at schema, I didn't add riskScore to Scenario. Let's add it or default to 50.
 
     // STEP 1: Extract candidate actions
+    console.log(`[Simulation] Step 1: Extracting candidate actions...`);
     const candidateActions = await extractCandidateActions(submission.consultationText, initialState);
+    console.log(`[Simulation] Extracted ${candidateActions.length} actions`);
 
     // STEP 2: Simulate candidate actions
+    console.log(`[Simulation] Step 2: Running candidate simulation...`);
     const candidateYear1 = simulateActions(initialState, candidateActions);
 
     // STEP 3: Get or generate optimal strategy
+    console.log(`[Simulation] Step 3: Fetching optimal strategy...`);
     let optimalTrajectory: any = scenario.cachedOptimalTrajectory;
     if (!optimalTrajectory) {
+      console.log(`[Simulation] No cached strategy found, generating new optimal strategy...`);
       optimalTrajectory = await generateOptimalStrategy(scenario, initialState);
       await prisma.scenario.update({
         where: { id: scenario.id },
@@ -99,12 +107,15 @@ export const runSimulation = async (submissionId: string) => {
     const optimalActions = optimalTrajectory.actions;
 
     // STEP 4: Simulate optimal actions
+    console.log(`[Simulation] Step 4: Running optimal simulation...`);
     const optimalYear1 = simulateActions(initialState, optimalActions);
 
     // STEP 5: Generate divergence analysis
+    console.log(`[Simulation] Step 5: Generating AI divergence analysis...`);
     const divergencePoints = await generateDivergenceAnalysis(scenario, initialState, candidateActions, optimalActions);
 
     // STEP 6: Calculate outcome score
+    console.log(`[Simulation] Step 6: Calculating outcome scores...`);
     const outcomeScore = calculateOutcomeScore(initialState, candidateYear1, optimalYear1);
 
     // Update SimulationRun
@@ -118,6 +129,7 @@ export const runSimulation = async (submissionId: string) => {
         status: SimStatus.COMPLETE,
       }
     });
+    console.log(`[Simulation] SimulationRun updated to COMPLETE. Score: ${outcomeScore.toFixed(2)}%`);
 
     // Trigger evaluation service
     await evaluateSubmission(submissionId);

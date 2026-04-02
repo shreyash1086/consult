@@ -19,7 +19,9 @@ const KpiBeforeAfterTable: React.FC<KpiBeforeAfterTableProps> = ({ year0, candid
     { key: 'riskScore', label: 'Risk score', lowerIsBetter: true },
   ];
 
-  const formatValue = (key: string, val: number) => {
+  const formatValue = (key: string, val: number | undefined) => {
+    if (val === undefined || val === null) return 'N/A';
+    
     if (key === 'revenue') {
       if (val >= 1000000000) return `$${(val / 1000000000).toFixed(2)}B`;
       return `$${(val / 1000000).toFixed(1)}M`;
@@ -30,7 +32,9 @@ const KpiBeforeAfterTable: React.FC<KpiBeforeAfterTableProps> = ({ year0, candid
     return val.toLocaleString();
   };
 
-  const getDelta = (key: string, current: number, prev: number, lowerIsBetter = false) => {
+  const getDelta = (key: string, current: number | undefined, prev: number | undefined, lowerIsBetter = false) => {
+    if (current === undefined || prev === undefined) return { text: '-', color: 'text-white/20', icon: Minus };
+    
     const diff = current - prev;
     const percent = prev !== 0 ? (diff / prev) * 100 : 0;
     

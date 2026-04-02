@@ -22,6 +22,7 @@ export const evaluateSubmission = async (submissionId: string) => {
     });
 
     if (!submission) throw new Error('Submission not found');
+    console.log(`[Evaluation] Starting evaluation for submission: ${submissionId}`);
 
     const questionAnswers = submission.questionAnswers as Record<string, string>;
     const questionResults: Record<string, any> = {};
@@ -53,13 +54,16 @@ export const evaluateSubmission = async (submissionId: string) => {
     }
 
     const questionScore = totalQuestionMarks > 0 ? (earnedQuestionMarks / totalQuestionMarks) * 100 : 100;
+    console.log(`[Evaluation] Question scoring complete: ${questionScore.toFixed(2)}%`);
 
     // 2. Evaluate Consultation
+    console.log(`[Evaluation] Calling OpenAI for consultation rubric...`);
     const consultationEvaluation = await callOpenAIForConsultation(
       submission.scenario.description,
       submission.scenario.modelAnswer,
       submission.consultationText
     );
+    console.log(`[Evaluation] Rubric scoring complete`);
 
     // 3. Calculate Final Scores
     // Fetch outcome score from SimulationRun if available
@@ -119,7 +123,8 @@ export const evaluateSubmission = async (submissionId: string) => {
       },
     });
 
-    console.log(`Evaluation complete for submission ${submissionId}`);
+    console.log(`[Evaluation] Submission status updated to EVALUATED for ${submissionId}`);
+    console.log(`[Evaluation] SUCCESS: Full pipeline complete.`);
   } catch (error) {
     console.error('Evaluation Service Error:', error);
     // Mark as failed or retry? For now just log.

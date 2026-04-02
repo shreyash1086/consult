@@ -23,7 +23,8 @@ import DecisionTimeline from '../../components/candidate/DecisionTimeline';
 import { SubmissionStatus } from '../../types';
 
 const ResultPage = () => {
-  const { id } = useParams();
+  const { id: rawId } = useParams();
+  const id = rawId?.replace(/\/c$/, ''); // Sanitize ID if trailing /c was appended
   const { submission, loading, error } = useSubmissionPoll(id || null);
 
   if (loading || !submission || submission.status === SubmissionStatus.PENDING || submission.status === SubmissionStatus.SIMULATING) {
@@ -44,7 +45,27 @@ const ResultPage = () => {
   }
 
   const { evaluation, simulationRun, scenario } = submission;
-  if (!evaluation) return null;
+  
+  if (!evaluation) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center p-8 space-y-6">
+        <AlertCircle className="text-yellow-500" size={64} />
+        <h2 className="text-2xl font-bold">Evaluation Incomplete</h2>
+        <p className="text-white/40 text-center max-w-md">
+          The simulation reported as complete, but your quantitative analysis record is currently empty. 
+          Please refresh the page in a few moments, or check the server logs for diagnostic errors.
+        </p>
+        <div className="flex gap-4">
+          <button onClick={() => window.location.reload()} className="px-8 py-3 bg-brand-red rounded-xl hover:bg-[#ff4d4d] transition-all font-bold">
+            Refresh Simulation
+          </button>
+          <Link to="/submissions" className="px-8 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all font-bold text-white/60">
+            Return to History
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const outcomeScore = simulationRun?.outcomeScore || 0;
 
